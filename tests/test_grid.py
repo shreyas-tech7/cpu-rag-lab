@@ -26,19 +26,21 @@ def test_resume_after_stop_mid_chunk(tmp_path):
     out = tmp_path / "r.jsonl"
     calls = {"n": 0}
 
-    def stop_on_fifth(spec):
+    def stop_on_sixth(spec):
         calls["n"] += 1
-        return calls["n"] == 5  # 4 runs done: one full setting plus one run of the next
+        # BM25 runs go first (4), then dense and hybrid by chunk setting. Stopping before
+        # the sixth run leaves the fixed|0 setting half done: dense finished, hybrid not.
+        return calls["n"] == 6
 
-    Runner(CFG, out, log=lambda *_: None).run(should_stop=stop_on_fifth)
-    assert len(read_jsonl(out)) == 4
+    Runner(CFG, out, log=lambda *_: None).run(should_stop=stop_on_sixth)
+    assert len(read_jsonl(out)) == 5
     # A hard kill leaves a run marked running in the journal with no result line.
     journal = tmp_path / "r.state.jsonl"
     with journal.open("a") as f:
-        f.write(json.dumps({"run_id": "tiny|heading|32|0|bm25|-", "status": "running"}) + "\n")
-    assert states(out)["tiny|heading|32|0|bm25|-"] == "pending"
+        f.write(json.dumps({"run_id": "tiny|fixed|32|0|hybrid|hash", "status": "running"}) + "\n")
+    assert states(out)["tiny|fixed|32|0|hybrid|hash"] == "pending"
     n = Runner(CFG, out, log=lambda *_: None).run()
-    assert n == 8
+    assert n == 7
     rows = read_jsonl(out)
     ids = [r["run_id"] for r in rows]
     assert len(ids) == len(set(ids)) == 12
@@ -69,3 +71,57 @@ def test_memory_limit_fails_run_and_grid_continues(tmp_path):
     assert "MemoryLimitExceeded" in rows[0]["error"]
     # failed runs are skipped on resume unless asked
     assert Runner(cfg, out, log=lambda *_: None).run() == 0
+
+
+def test_journal_name_works_for_any_suffix(tmp_path):
+    """Broken case: --results out.json made the journal the same file as the results."""
+    from cpu_rag_lab.grid import journal_path
+
+    assert journal_path(tmp_path / "out.json") == tmp_path / "out.json.state.jsonl"
+    assert journal_path(tmp_path / "r.jsonl") == tmp_path / "r.state.jsonl"
+    out = tmp_path / "out.json"
+    Runner(dict(CFG, chunkers=["fixed"], overlaps=[0]), out, log=lambda *_: None).run()
+    assert all("metrics" in r for r in read_jsonl(out))
+
+
+def test_half_written_line_does_not_lose_the_next_row(tmp_path):
+    """Broken case: a cut-off last line glued onto the next row, so both were dropped."""
+    out = tmp_path / "r.jsonl"
+    cfg = dict(CFG, chunkers=["fixed"], overlaps=[0])
+    Runner(cfg, out, log=lambda *_: None).run(should_stop=lambda s: s.retriever == "hybrid")
+    with out.open("a") as f:
+        f.write('{"run_id": "tiny|fixed|32|0|hybr')  # hard stop mid-write
+    Runner(cfg, out, log=lambda *_: None).run()
+    ids = [r["run_id"] for r in read_jsonl(out)]
+    assert sorted(ids) == sorted(s.run_id for s in expand(cfg))
+
+
+def test_journal_done_without_result_row_runs_again(tmp_path):
+    out = tmp_path / "r.jsonl"
+    rid = "tiny|fixed|32|0|bm25|-"
+    (tmp_path / "r.state.jsonl").write_text(json.dumps({"run_id": rid, "status": "done"}) + "\n")
+    assert states(out).get(rid, "pending") == "pending"
+
+
+def test_peak_is_measured_per_run(tmp_path, monkeypatch):
+    """Broken case: the peak was reset once per chunk setting, so later runs inherited it."""
+    from cpu_rag_lab import memguard
+
+    out = tmp_path / "r.jsonl"
+    cfg = dict(CFG, chunkers=["fixed"], overlaps=[0], retrievers=["bm25", "dense"])
+    # 900 MB while the first run is going, 100 MB after its row is written.
+    fake = lambda *_: 100.0 if out.exists() and out.read_text() else 900.0  # noqa: E731
+    monkeypatch.setattr(memguard, "rss_mb", fake)
+    Runner(cfg, out, log=lambda *_: None).run()
+    assert [r["peak_rss_mb"] for r in read_jsonl(out)] == [900.0, 100.0]
+
+
+def test_retry_failed_report_counts_each_run_once(tmp_path):
+    from cpu_rag_lab.report import latest_rows
+
+    out = tmp_path / "r.jsonl"
+    cfg = dict(CFG, chunkers=["heading"], overlaps=[0], memory_limit_mb=1)
+    Runner(cfg, out, log=lambda *_: None).run()
+    Runner(dict(cfg, memory_limit_mb=2048), out, retry_failed=True, log=lambda *_: None).run()
+    rows = latest_rows(read_jsonl(out))
+    assert len(rows) == 3 and all(r["status"] == DONE for r in rows)

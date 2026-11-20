@@ -12,7 +12,17 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SKIP_DIRS = {".venv", ".git", "node_modules", ".cache", "logs", "raw", "graphify-out", ".pytest_cache", ".ruff_cache"}
+SKIP_DIRS = {
+    ".venv",
+    ".git",
+    "node_modules",
+    ".cache",
+    "logs",
+    "raw",
+    "graphify-out",
+    ".pytest_cache",
+    ".ruff_cache",
+}
 SKIP_FILES = {ROOT / "docs" / "build" / "BUILD_PROMPT.md"}
 MD_LINK = re.compile(r"(?<!!)\[[^\]]*\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)")
 HTML_LINK = re.compile(r'(?:href|src)="([^"]+)"')
@@ -66,7 +76,9 @@ def main() -> int:
                 errors.append(f"{f.relative_to(ROOT)}: missing anchor {link}")
     for e in errors:
         print("FAIL", e)
-    print(f"checked {len(files())} files, {len(errors)} problems, {len(external)} external links not checked")
+    print(
+        f"checked {len(files())} files, {len(errors)} problems, {len(external)} external links not checked"
+    )
     for link in sorted(external):
         print("  not checked:", link)
     return 1 if errors else 0

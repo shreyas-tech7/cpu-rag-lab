@@ -1,0 +1,26 @@
+{
+  "cpu": [
+    "Intel(R) Xeon(R) Processor @ 2.30GHz"
+  ],
+  "dates": [
+    "2026-11-20"
+  ],
+  "done": 90,
+  "failed": 0,
+  "grids": [
+    "default"
+  ],
+  "memory_limit_mb": 2048,
+  "models": [
+    "minilm"
+  ],
+  "peak_rss_mb": 1416.1,
+  "runs": 90,
+  "seeds": [
+    0
+  ],
+  "threads": [
+    4
+  ],
+  "wall_s": 1472.125
+}

@@ -59,6 +59,5 @@ def top_k(scores: np.ndarray, k: int, positive_only: bool = True) -> list[int]:
     k = min(k, len(scores))
     if k == 0:
         return []
-    idx = np.argpartition(-scores, k - 1)[:k]
-    idx = idx[np.lexsort((idx, -scores[idx]))]
+    idx = np.argsort(-np.asarray(scores), kind="stable")[:k]
     return [int(i) for i in idx if not positive_only or scores[i] > 0]

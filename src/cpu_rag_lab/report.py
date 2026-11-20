@@ -16,13 +16,6 @@ from .corpus import ROOT
 from .grid import DONE, FAILED, read_jsonl
 from .svg import bars, scatter
 
-METRICS = ("recall@10", "mrr@10", "ndcg@10")
-METRIC_NAMES = {
-    "recall@5": "Recall@5",
-    "recall@10": "Recall@10",
-    "mrr@10": "MRR@10",
-    "ndcg@10": "nDCG@10",
-}
 CORPUS_NAMES = {
     "selfmade": "self-made docs (fastapi, uv, httpx)",
     "scifact1000": "SciFact, 1,000-abstract pool",
@@ -53,6 +46,14 @@ class Facts:
 
     def ci(self, m: dict) -> str:
         return f"{self.f(m['mean'])} [{self.f(m['lo'])}, {self.f(m['hi'])}]"
+
+
+def latest_rows(rows: list[dict]) -> list[dict]:
+    """One row per run id. A run retried with --retry-failed keeps only its last row."""
+    last: dict[str, dict] = {}
+    for r in rows:
+        last[r["run_id"]] = r
+    return list(last.values())
 
 
 def done_rows(rows: list[dict]) -> list[dict]:
@@ -105,7 +106,9 @@ def run_facts(rows: list[dict]) -> dict:
         "done": len(done),
         "failed": sum(r["status"] == FAILED for r in rows),
         "wall_s": sum(r.get("wall_s", 0) for r in rows),
-        "peak_rss_mb": max((r["peak_rss_mb"] for r in rows), default=0),
+        "peak_rss_mb": max((r["peak_rss_mb"] for r in done), default=0),
+        "memory_limit_mb": max((r["memory_limit_mb"] for r in rows), default=0),
+        "grids": sorted({r["grid"] for r in rows}),
         "dates": sorted({r["date"] for r in rows}),
         "cpu": sorted({r["cpu"] for r in rows}),
         "threads": sorted({r["threads"] for r in rows}),
@@ -121,7 +124,7 @@ def status_block(rows: list[dict], facts: Facts) -> str:
         r = next(x for x in rows if x["corpus"] == c)
         pools.append(f"{c} ({facts.i(r['n_docs'])} docs, {facts.i(r['n_queries'])} queries)")
     return (
-        f"Grid `default`: {facts.i(t['done'])} of {facts.i(t['runs'])} runs done, "
+        f"Grid `{', '.join(t['grids'])}`: {facts.i(t['done'])} of {facts.i(t['runs'])} runs done, "
         f"{facts.i(t['failed'])} failed, {facts.f(t['wall_s'] / 60, 1)} minutes of run time, "
         f"peak RSS {facts.i(t['peak_rss_mb'])} MB. Run on {', '.join(t['dates'])}, "
         f"{', '.join(t['cpu'])}, {', '.join(str(x) for x in t['threads'])} threads, "
@@ -170,7 +173,7 @@ def models_block(facts: Facts) -> str:
 
 
 def _mean(rows: list[dict], key=lambda r: r["metrics"]["ndcg@10"]["mean"]) -> float:
-    return statistics.fmean(key(r) for r in rows) if rows else 0.0
+    return statistics.fmean(key(r) for r in rows)
 
 
 def guide(rows: list[dict], facts: Facts) -> str:
@@ -238,15 +241,20 @@ def guide(rows: list[dict], facts: Facts) -> str:
                 f"Best dense against best BM25: {win} is ahead, and the intervals "
                 + ("do not overlap." if sep else "overlap, so the gap may be noise."),
             ]
-        if "hybrid" in per_ret:
+        singles = [per_ret[r][0] for r in per_ret if r != "hybrid"]
+        if "hybrid" in per_ret and singles:
             h = per_ret["hybrid"][0]["metrics"]["ndcg@10"]
-            others = max(
-                per_ret[r][0]["metrics"]["ndcg@10"]["mean"] for r in per_ret if r != "hybrid"
-            )
-            verb = "beats" if h["mean"] > others else "does not beat"
+            o = max(singles, key=lambda r: r["metrics"]["ndcg@10"]["mean"])["metrics"]["ndcg@10"]
+            ahead = "ahead of" if h["mean"] > o["mean"] else "behind"
+            sep = h["lo"] > o["hi"] or o["lo"] > h["hi"]
             out.append(
-                f"Hybrid search with reciprocal rank fusion {verb} the best single retriever "
-                f"({facts.f(h['mean'])} against {facts.f(others)})."
+                f"Best hybrid search with reciprocal rank fusion is {ahead} the best single "
+                f"retriever ({facts.f(h['mean'])} against {facts.f(o['mean'])}), and the "
+                + (
+                    "intervals do not overlap."
+                    if sep
+                    else "intervals overlap, so the gap may be noise."
+                )
             )
         out += ["", "### Chunk size", ""]
         sizes = sorted({r["size"] for r in rk})
@@ -260,12 +268,15 @@ def guide(rows: list[dict], facts: Facts) -> str:
             cells = []
             for s in sizes:
                 at = [r for r in rs if r["size"] == s]
+                if not at:
+                    cells.append("no finished run")
+                    continue
                 cells.append(
                     f"nDCG {facts.f(_mean(at))}, p50 {facts.f(_mean(at, lambda r: r['latency_ms']['p50']), 2)} ms, "
                     f"build {facts.f(_mean(at, lambda r: r['index_build_s']), 2)} s"
                 )
             out.append(f"| {ret} | " + " | ".join(cells) + " |")
-        by_size = {s: _mean([r for r in rk if r["size"] == s]) for s in sizes}
+        by_size = {s: _mean([r for r in rk if r["size"] == s]) for s in sizes}  # rk is done rows
         top_size = max(by_size, key=lambda s: by_size[s])
         out += [
             "",
@@ -284,7 +295,8 @@ def guide(rows: list[dict], facts: Facts) -> str:
     out += [
         "## Memory and time",
         "",
-        f"- Highest peak RSS in any run: {facts.i(t['peak_rss_mb'])} MB, under the 2048 MB guard.",
+        f"- Highest peak RSS in a finished run: {facts.i(t['peak_rss_mb'])} MB. The guard "
+        f"stops any run over {facts.i(t['memory_limit_mb'])} MB.",
         f"- Total run time of the grid: {facts.f(t['wall_s'] / 60, 1)} minutes "
         f"for {facts.i(t['done'])} runs.",
         f"- Failed runs: {facts.i(t['failed'])}.",
@@ -294,6 +306,7 @@ def guide(rows: list[dict], facts: Facts) -> str:
         "- Self-made queries are section headings. They are a proxy for real questions and favor words that the docs already use.",
         "- The SciFact pool is cut down for time. A smaller pool makes retrieval easier than the full benchmark.",
         "- MiniLM reads at most 256 tokens, so long chunks are cut short for dense search.",
+        "- A retrieved chunk gives credit to every section its words come from. A long fixed or sentence chunk can span several short sections, while a heading chunk spans one. This favors long chunks a little and heading chunks on the self-made corpus.",
         "- One machine, one model and one seed for the bootstrap. Timings move with the machine.",
         "",
     ]
@@ -320,7 +333,7 @@ th{cursor:pointer;background:var(--card)}select{font:inherit}
 
 JS = """
 const rows = JSON.parse(document.getElementById('data').textContent);
-const cols = ['corpus','retriever','model','chunker','size','overlap','recall@10','mrr@10','ndcg@10',
+const cols = ['corpus','retriever','model','chunker','size','overlap','recall@5','recall@10','mrr@10','ndcg@10',
   'p50','p95','peak_rss_mb','index_build_s'];
 let sortKey = 'ndcg@10', desc = true;
 function val(r, c){
@@ -337,10 +350,13 @@ function draw(){
   const rs = rows.filter(r => pick === 'all' || r.corpus === pick)
     .sort((a,b) => { const x=val(a,sortKey), y=val(b,sortKey); return (x<y?-1:x>y?1:0)*(desc?-1:1); });
   const t = document.getElementById('runs');
-  t.innerHTML = '<tr>' + cols.map(c => '<th data-c="'+c+'">'+c+'</th>').join('') + '</tr>' +
-    rs.map(r => '<tr>' + cols.map(c => '<td>'+cell(r,c)+'</td>').join('') + '</tr>').join('');
-  t.querySelectorAll('th').forEach(th => th.onclick = () => {
-    const c = th.dataset.c; desc = (sortKey === c) ? !desc : true; sortKey = c; draw(); });
+  t.replaceChildren();
+  const head = t.insertRow();
+  cols.forEach(c => { const th = document.createElement('th'); th.textContent = c;
+    th.onclick = () => { desc = (sortKey === c) ? !desc : true; sortKey = c; draw(); };
+    head.appendChild(th); });
+  rs.forEach(r => { const tr = t.insertRow();
+    cols.forEach(c => { tr.insertCell().textContent = cell(r, c); }); });
 }
 document.getElementById('corpus').onchange = draw;
 draw();
@@ -353,9 +369,15 @@ def site(rows: list[dict], facts: Facts) -> str:
     charts = []
     for c in corpora(done):
         rk = [r for r in done if r["corpus"] == c]
-        sizes = sorted({r["size"] for r in rk})
+        rets = [x for x in RETRIEVER_ORDER if any(r["retriever"] == x for r in rk)]
+        # Only sizes where every retriever has a finished run, so no bar is a made-up zero.
+        sizes = sorted(
+            s
+            for s in {r["size"] for r in rk}
+            if all(any(r["size"] == s and r["retriever"] == x for r in rk) for x in rets)
+        )
         series = {}
-        for ret in RETRIEVER_ORDER:
+        for ret in rets:
             rs = [r for r in rk if r["retriever"] == ret]
             if rs:
                 best = []
@@ -404,7 +426,7 @@ def site(rows: list[dict], facts: Facts) -> str:
 <script type="application/json" id="data">{data}</script>
 <script>{JS}</script>
 </body></html>
-"""
+"""  # noqa: S608 - this builds HTML, not SQL
 
 
 def replace_block(text: str, name: str, content: str) -> str:
@@ -434,7 +456,7 @@ def readme_blocks(rows: list[dict], facts: Facts) -> dict[str, str]:
 
 
 def build(results: Path) -> tuple[dict[Path, str], Facts]:
-    rows = read_jsonl(results)
+    rows = latest_rows(read_jsonl(results))
     facts = Facts()
     out: dict[Path, str] = {}
     readme = (ROOT / "README.md").read_text()

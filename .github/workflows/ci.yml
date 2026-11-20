@@ -2,7 +2,15 @@ name: CI
 
 on:
   push:
-    paths-ignore: ["**.md", "docs/**"]
+    # Skip pushes that change only hand-written docs. README.md and the decision guide
+    # are generated, so a change there still runs `report --check`.
+    paths:
+      - "**"
+      - "!**.md"
+      - "!docs/**"
+      - "README.md"
+      - "docs/DECISION_GUIDE.md"
+      - "docs/index.html"
   pull_request:
   workflow_dispatch:
 

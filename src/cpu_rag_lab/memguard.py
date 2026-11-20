@@ -27,27 +27,31 @@ class MemGuard:
     raises MemoryLimitExceeded so the run ends as failed and the grid moves on.
     """
 
-    def __init__(self, limit_mb: float = LIMIT_MB, interval: float = 0.02, reader=rss_mb):
+    def __init__(self, limit_mb: float = LIMIT_MB, interval: float = 0.02, reader=None):
         self.limit_mb, self.interval, self.reader = limit_mb, interval, reader
         self.peak_mb = 0.0
         self.exceeded = False
+        self._lock = threading.Lock()  # reset() and the sampler thread both write the peak
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
 
     def sample(self) -> float:
-        mb = self.reader()
-        self.peak_mb = max(self.peak_mb, mb)
-        if mb > self.limit_mb:
-            self.exceeded = True
-        return mb
+        with self._lock:
+            mb = (self.reader or rss_mb)()
+            self.peak_mb = max(self.peak_mb, mb)
+            if mb > self.limit_mb:
+                self.exceeded = True
+            return mb
 
     def _loop(self) -> None:
         while not self._stop.wait(self.interval):
             self.sample()
 
-    def reset(self) -> None:
-        self.peak_mb, self.exceeded = 0.0, False
-        self.sample()
+    def reset(self) -> float:
+        """Start a new peak. Returns the current RSS."""
+        with self._lock:
+            self.peak_mb, self.exceeded = 0.0, False
+        return self.sample()
 
     def check(self) -> None:
         self.sample()

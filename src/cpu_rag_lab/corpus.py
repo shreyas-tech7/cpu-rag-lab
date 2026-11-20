@@ -158,7 +158,7 @@ def load_scifact(root: Path | None = None, max_docs: int | None = None, seed: in
 
         cited = {u for q in queries for u in q.relevant}
         rest = sorted(d.doc_id for d in docs if d.doc_id not in cited)
-        keep = cited | set(random.Random(seed).sample(rest, max(0, max_docs - len(cited))))
+        keep = cited | set(random.Random(seed).sample(rest, max(0, max_docs - len(cited))))  # noqa: S311 - seeded sample, not crypto
         docs = [d for d in docs if d.doc_id in keep]
         name = f"scifact{max_docs}"
     return Corpus(name, docs, queries)

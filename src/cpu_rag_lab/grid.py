@@ -31,7 +31,6 @@ from .retrieve import DEPTH, dense_search, rrf, to_units
 
 PENDING, RUNNING, DONE, FAILED = "pending", "running", "done", "failed"
 RETRIEVERS = ("bm25", "dense", "hybrid")
-AXES = ("chunkers", "sizes", "overlaps", "retrievers", "models")  # a corpus entry can override
 
 
 @dataclass(frozen=True)
@@ -83,6 +82,21 @@ def _append(path: Path, row: dict) -> None:
         os.fsync(f.fileno())
 
 
+def journal_path(results: Path) -> Path:
+    results = Path(results)
+    stem = results.name[: -len(".jsonl")] if results.name.endswith(".jsonl") else results.name
+    return results.with_name(stem + ".state.jsonl")
+
+
+def heal(path: Path) -> None:
+    """Cut off a last line that a hard stop left half written, so the next append is clean."""
+    if not path.exists():
+        return
+    data = path.read_bytes()
+    if data and not data.endswith(b"\n"):
+        path.write_bytes(data[: data.rfind(b"\n") + 1])
+
+
 def read_jsonl(path: Path) -> list[dict]:
     if not path.exists():
         return []
@@ -97,21 +111,21 @@ def read_jsonl(path: Path) -> list[dict]:
 
 
 def states(results: Path) -> dict[str, str]:
-    """Current state of each run id seen so far. Missing ids are pending."""
-    journal = Path(str(results).replace(".jsonl", ".state.jsonl"))
-    st: dict[str, str] = {}
-    for e in read_jsonl(journal):
-        st[e["run_id"]] = e["status"]
-    for r in read_jsonl(results):
+    """Current state of each run id seen so far. Missing ids are pending.
+
+    Only a row in the results file makes a run done or failed. The journal adds runs that
+    started. A run the journal shows without a result row was cut off, so it is pending.
+    """
+    st = {e["run_id"]: PENDING for e in read_jsonl(journal_path(results))}
+    for r in read_jsonl(Path(results)):
         st[r["run_id"]] = r["status"]
-    # A run left in `running` was cut off. It goes back to pending.
-    return {k: (PENDING if v == RUNNING else v) for k, v in st.items()}
+    return st
 
 
 class Runner:
     def __init__(self, cfg: dict, results: Path, retry_failed: bool = False, log=print):
         self.cfg, self.results, self.log = cfg, Path(results), log
-        self.journal = Path(str(self.results).replace(".jsonl", ".state.jsonl"))
+        self.journal = journal_path(self.results)
         self.retry_failed = retry_failed
         self.threads = cfg.get("threads", 2)
         self.limit_mb = cfg.get("memory_limit_mb", LIMIT_MB)
@@ -126,27 +140,34 @@ class Runner:
 
     def run(self, should_stop: Callable[[RunSpec], bool] | None = None) -> int:
         """Run every pending run. Returns how many runs finished in this call."""
+        heal(self.results)
+        heal(self.journal)
         todo = self.todo()
         self.log(f"{len(todo)} runs to do, {len(expand(self.cfg)) - len(todo)} already finished")
         finished = 0
+        # BM25 runs go first, before any model is loaded, so their peak RAM does not
+        # include a model they never use. Then dense and hybrid, one chunk setting at a time.
         groups: dict[tuple, list[RunSpec]] = {}
         for s in todo:
-            groups.setdefault((s.corpus, s.chunker, s.size, s.overlap), []).append(s)
+            key = (s.retriever != "bm25", s.corpus, s.chunker, s.size, s.overlap)
+            groups.setdefault(key, []).append(s)
         loaded: dict[str, corpus_mod.Corpus] = {}
         embedders: dict[str, object] = {}
         with MemGuard(self.limit_mb) as guard:
-            for (cname, chunker, size, overlap), specs in groups.items():
+            for (_, cname, chunker, size, overlap), specs in sorted(
+                groups.items(), key=lambda kv: kv[0][0]
+            ):
                 if cname not in loaded:
                     loaded.clear()
                     loaded[cname] = self._load(cname)
                 corp = loaded[cname]
-                guard.reset()
                 state = _GroupState(corp, chunk_corpus(corp.docs, chunker, size, overlap))
                 for spec in specs:
                     if should_stop and should_stop(spec):
                         self.log("stop requested")
                         return finished
                     self._mark(spec.run_id, RUNNING)
+                    start_mb = guard.reset()
                     t0 = time.perf_counter()
                     try:
                         row = self._one(spec, state, embedders, guard)
@@ -154,7 +175,13 @@ class Runner:
                         row = self._base(spec, state)
                         row.update(status=FAILED, error=f"{type(e).__name__}: {e}")
                     row["wall_s"] = round(time.perf_counter() - t0, 3)
-                    row["peak_rss_mb"] = round(guard.peak_mb, 1)
+                    # Hybrid reuses the vectors that the dense run embedded, so it also
+                    # carries the peak of that embedding step.
+                    reused = (
+                        state.embed_peak.get(spec.model, 0.0) if spec.retriever == "hybrid" else 0.0
+                    )
+                    row["peak_rss_mb"] = round(max(guard.peak_mb, reused), 1)
+                    row["rss_start_mb"] = round(start_mb, 1)
                     _append(self.results, row)
                     self._mark(spec.run_id, row["status"])
                     finished += 1
@@ -233,6 +260,7 @@ class _GroupState:
         self.bm25_s = 0.0
         self.mats: dict[str, np.ndarray] = {}
         self.embed_s: dict[str, float] = {}
+        self.embed_peak: dict[str, float] = {}
 
     def bm25(self, guard: MemGuard) -> float:
         if self.index is None:
@@ -247,6 +275,7 @@ class _GroupState:
             t = time.perf_counter()
             self.mats[model] = emb.embed([c.text for c in self.chunks], on_batch=guard.check)
             self.embed_s[model] = time.perf_counter() - t
+            self.embed_peak[model] = guard.peak_mb
         return self.embed_s[model]
 
 

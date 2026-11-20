@@ -66,7 +66,14 @@ def text(px, s, x, y, scale, color):
         for gy, line in enumerate(glyph):
             for gx, bit in enumerate(line):
                 if bit == "1":
-                    rect(px, x + gx * scale, y + gy * scale, x + (gx + 1) * scale, y + (gy + 1) * scale, color)
+                    rect(
+                        px,
+                        x + gx * scale,
+                        y + gy * scale,
+                        x + (gx + 1) * scale,
+                        y + (gy + 1) * scale,
+                        color,
+                    )
         x += 6 * scale
     return x
 
@@ -78,7 +85,12 @@ def png(px) -> bytes:
         return struct.pack(">I", len(data)) + tag + data + struct.pack(">I", zlib.crc32(tag + data))
 
     ihdr = struct.pack(">IIBBBBB", W, H, 8, 2, 0, 0, 0)
-    return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", ihdr) + chunk(b"IDAT", zlib.compress(raw, 9)) + chunk(b"IEND", b"")
+    return (
+        b"\x89PNG\r\n\x1a\n"
+        + chunk(b"IHDR", ihdr)
+        + chunk(b"IDAT", zlib.compress(raw, 9))
+        + chunk(b"IEND", b"")
+    )
 
 
 def main() -> None:

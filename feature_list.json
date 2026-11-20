@@ -97,7 +97,7 @@
     "description": "Default grid finishes in about 20 minutes with peak memory under 2 GB, recorded per run",
     "steps": [
       ".venv/bin/cpu-rag-lab status --config configs/default.json",
-      "cat results/default_grid_timing.json"
+      "cat results/summary.json"
     ],
     "passes": false
   },

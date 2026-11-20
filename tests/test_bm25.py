@@ -28,3 +28,9 @@ def test_search_ranks_best_first_and_drops_non_matches():
 
 def test_top_k_keeps_negative_scores_when_asked():
     assert top_k(np.array([-0.5, -0.1, -0.9]), 2, positive_only=False) == [1, 0]
+
+
+def test_top_k_ties_at_the_cutoff_go_to_the_lower_index():
+    """Broken case: argpartition picked any of the tied scores at the cutoff."""
+    assert top_k(np.array([1.0] * 10 + [2.0]), 3) == [10, 0, 1]
+    assert top_k(np.ones(300), 3) == [0, 1, 2]

@@ -165,6 +165,8 @@ def models_block(facts: Facts) -> str:
             f"| `{name}` {m.get('hf_name', '')} | {m['kind']} | {m['size_mb']} | {m['license']} | {rev} |"
         )
     lines.append("")
+    lines.append("Hashes are shortened here. The full SHA-256 values are in `models.json`.")
+    lines.append("")
     lines.append("Blocked on the build machine:")
     lines.append("")
     for name, why in reg["blocked"].items():

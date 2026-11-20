@@ -32,7 +32,7 @@ Every chunk keeps the ids of the sections its words came from. `to_units` in `sr
 
 ## 8. How do you keep memory under 2 GB?
 
-A watchdog thread in `src/cpu_rag_lab/memguard.py` reads `VmRSS` from `/proc/self/status` every 20 ms and keeps the peak. The runner calls `check()` after each embedding batch of 32 and stops the run if the peak passed 2048 MB. The first real run hit 2,204 MB because ONNX Runtime's memory arena kept growing on mixed batch shapes. Turning the arena off (`enable_cpu_mem_arena=False` in `src/cpu_rag_lab/embedders.py`) fixed it. The highest peak in the final grid was 1,416 MB (`results/summary.json`). The peak resets at the start of each run. BM25 runs go first, before the model is loaded, so they peak at about 57 MB on selfmade. The guard has its own tests with a limit of 1 MB in `tests/test_grid.py`.
+A watchdog thread in `src/cpu_rag_lab/memguard.py` reads `VmRSS` from `/proc/self/status` every 20 ms and keeps the peak. The runner calls `check()` after each embedding batch of 32 and stops the run if the peak passed 2048 MB. The first real run hit 2,204 MB because ONNX Runtime's memory arena kept growing on mixed batch shapes. Turning the arena off (`enable_cpu_mem_arena=False` in `src/cpu_rag_lab/embedders.py`) fixed it. The highest peak in the final grid was 1,416 MB (`results/summary.json`). The peak resets at the start of each run. BM25 runs go first, before the model is loaded, so they peak between 47 and 57 MB on selfmade. The guard has its own tests with a limit of 1 MB in `tests/test_grid.py`.
 
 ## 9. What happens if the grid dies halfway?
 

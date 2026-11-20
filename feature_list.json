@@ -6,7 +6,7 @@
     "steps": [
       "./init.sh"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": "F02",
@@ -15,7 +15,7 @@
     "steps": [
       ".venv/bin/python -m pytest tests/test_corpus.py"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": "F03",
@@ -24,7 +24,7 @@
     "steps": [
       ".venv/bin/python -m pytest tests/test_retrieve.py -k hash"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": "F04",
@@ -33,7 +33,7 @@
     "steps": [
       ".venv/bin/python -m pytest tests/test_chunkers.py"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": "F05",
@@ -42,7 +42,7 @@
     "steps": [
       ".venv/bin/python -m pytest tests/test_bm25.py"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": "F06",
@@ -51,7 +51,7 @@
     "steps": [
       ".venv/bin/python -m pytest tests/test_metrics.py"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": "F07",
@@ -60,7 +60,7 @@
     "steps": [
       ".venv/bin/python -m pytest tests/test_grid.py tests/test_memguard.py"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": "F08",
@@ -71,7 +71,7 @@
       ".venv/bin/python -m pytest tests/test_retrieve.py",
       "grep -c '\"retriever\": \"hybrid\"' results/results.jsonl"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": "F09",
@@ -80,7 +80,8 @@
     "steps": [
       "cat BLOCKERS.md | grep -i reranker"
     ],
-    "passes": false
+    "passes": false,
+    "blocked": "huggingface.co answers 403; see BLOCKERS.md. Optional in the MVP, so the grid runs without it"
   },
   {
     "id": "F10",
@@ -89,7 +90,7 @@
     "steps": [
       "time taskset -c 0,1 .venv/bin/cpu-rag-lab run --config configs/tiny.json --results /tmp/tiny-check.jsonl"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": "F11",
@@ -99,7 +100,7 @@
       ".venv/bin/cpu-rag-lab status --config configs/default.json",
       "cat results/summary.json"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": "F12",
@@ -108,7 +109,7 @@
     "steps": [
       ".venv/bin/python -m pytest tests/test_report.py -k readme"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": "F13",
@@ -117,7 +118,7 @@
     "steps": [
       ".venv/bin/python -m pytest tests/test_report.py -k guide"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": "F14",
@@ -127,7 +128,7 @@
       ".venv/bin/cpu-rag-lab report --check",
       ".venv/bin/python -m pytest tests/test_report.py -k site"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": "F15",
@@ -136,7 +137,7 @@
     "steps": [
       ".venv/bin/python -m pytest tests/test_report.py -k models"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": "F16",
@@ -147,7 +148,7 @@
       "actionlint .github/workflows/*.yml",
       "test -f docs/social-preview.png"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": "F17",
@@ -156,7 +157,7 @@
     "steps": [
       "test -f docs/WALKTHROUGH.md && test -f docs/INTERVIEW_QA.md && test -f DECISIONS.md"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": "F18",
@@ -167,7 +168,7 @@
       "ruff check --select S src",
       "cat docs/RELEASE_CHECK.md"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": "F19",
@@ -177,6 +178,6 @@
       "grep v0.1.0-rc1 CHANGELOG.md",
       "test -f docs/HUMAN_STEPS.md && test -f docs/handoff/COWORK_PROMPT.md && test -f docs/topics.txt"
     ],
-    "passes": false
+    "passes": true
   }
 ]

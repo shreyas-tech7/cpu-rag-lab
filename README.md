@@ -65,6 +65,8 @@ Scores are means over queries. Brackets hold 95% percentile bootstrap intervals 
 | `hash`  | hash | 0 | MIT (this repo) | built in |
 | `minilm` sentence-transformers/all-MiniLM-L6-v2 | fastembed | 86.2 | Apache-2.0 | Chroma ONNX export onnx.tar.gz, archive sha256 913d7300ceae (file dated 2023-03-30), model.onnx sha256 `4f148ba8ae9c2c7f` |
 
+Hashes are shortened here. The full SHA-256 values are in `models.json`.
+
 Blocked on the build machine:
 
 - `BAAI/bge-small-en-v1.5`: FastEmbed 0.9.1 downloads it only from huggingface.co, which answered 403 on 2026-11-20. The old Google Cloud Storage mirror answered 403 AccessDenied.

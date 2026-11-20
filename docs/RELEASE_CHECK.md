@@ -37,3 +37,26 @@ Not fixed, logged here:
 
 - The number-match test allows a few small constants (0, 1, 2, 5, 10 and others in `report.CONSTANTS`) anywhere in the README and the guide, and it matches formatted strings, not fields. A typed-in number that happens to equal a real result elsewhere would pass. A stricter check would tag each number with its source field. Left for a later version.
 - Recall@5 is in `results.jsonl` and on the site, but not in the README table, which follows the brief's column list.
+
+## Outside check
+
+A separate agent cloned the repo, ran `./init.sh` and checked each Done-means item with its own commands. It edited nothing.
+
+| # | Result | Evidence |
+| --- | --- | --- |
+| 1 | pass | tiny grid in 0.258 s on 2 cores, 36 runs. Tests use the hash embedder and a socket block |
+| 2 | pass on memory, slow on time | 90 of 90 rows have `peak_rss_mb`, highest 1416.1 MB. `summary.json` wall time 1472.125 s, which is 24.5 minutes, about a fifth over the target of about 20 |
+| 3 | pass | top-5 tables per corpus with Recall@10, MRR@10, nDCG@10 and intervals, p50, p95, peak RAM and build time. Top rows match `results.jsonl` |
+| 4 | pass | `tests/test_report.py` 7 of 7. A changed number in a copy of the guide failed the rebuild comparison |
+| 5 | pass | no `fetch(` and no external scripts in `docs/index.html`. Data is inline |
+| 6 | pass | `hash` and `minilm` rows with size, license and pinned revision. bge-small and the reranker listed as blocked |
+| 7 | pass | every listed file present, social preview is 1280 by 640 |
+
+Problems it found and what was done:
+
+1. At commit `df098a7`, `./init.sh` failed in a fresh clone because the `.gitignore` rule `build/` hid `docs/build/BUILD_PROMPT.md`. Fixed in `ee64a56` by anchoring the rule to `/build/`. CI also caught it. CI then failed on `report --check` under Python 3.11, because `sum()` of floats changed in Python 3.12. Fixed in `bc7c236` with `math.fsum`. CI passed on `bc7c236`.
+2. The default grid took 24.5 minutes, not about 20. Kept as is and stated in the final report. The fallback in the brief (drop the 512 size) was not taken, because 512 is a real winner on SciFact and the overrun is small.
+3. Interview answer 8 said BM25 runs peak "at about 57 MB". It now gives the range, 47 to 57 MB.
+4. The README showed shortened model hashes. It now says that the full values are in `models.json`.
+
+Spot check of three numbers in `docs/INTERVIEW_QA.md` against `results.jsonl`: all matched.

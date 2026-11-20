@@ -2,7 +2,7 @@
 
 Steps that only Shreyas can do, in order. The release commit is:
 
-`RELEASE_SHA_PLACEHOLDER`
+`b98c4e89ba0ebf4cfbfcbbcaa5cdd248d06df3ac`
 
 The repo stays private until step 5.
 
@@ -25,7 +25,7 @@ The GitHub repo was empty when the build started, and the build machine was not 
 
 ```bash
 git fetch origin
-git tag -a v0.1.0-rc1 RELEASE_SHA_PLACEHOLDER -m "Release candidate 1"
+git tag -a v0.1.0-rc1 b98c4e89ba0ebf4cfbfcbbcaa5cdd248d06df3ac -m "Release candidate 1"
 git push origin v0.1.0-rc1
 ```
 

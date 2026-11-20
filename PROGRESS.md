@@ -6,7 +6,7 @@
 - Code review fixes with tests, then a full rerun of the grid.
 - Study-later kit, DEMO, CHANGELOG, HUMAN_STEPS, COWORK_PROMPT, PROPOSALS, RELEASE_CHECK.
 - Release check and outside check done. See `docs/RELEASE_CHECK.md`.
-- Release SHA written into CHANGELOG.md and docs/HUMAN_STEPS.md by a follow-up commit.
+- Release commit b98c4e89ba0ebf4cfbfcbbcaa5cdd248d06df3ac. Its SHA is written into CHANGELOG.md and docs/HUMAN_STEPS.md by the follow-up commit.
 
 ## Next
 - Shreyas: the steps in `docs/HUMAN_STEPS.md`, starting with creating `main` and opening the pull request.

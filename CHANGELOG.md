@@ -2,7 +2,7 @@
 
 ## v0.1.0-rc1 (2026-11-20)
 
-Release commit: `RELEASE_SHA_PLACEHOLDER`
+Release commit: `b98c4e89ba0ebf4cfbfcbbcaa5cdd248d06df3ac`
 
 First release candidate.
 

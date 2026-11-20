@@ -1,0 +1,15 @@
+{
+  "name": "default",
+  "corpora": [
+    "selfmade",
+    {"name": "scifact1000", "chunkers": ["fixed", "sentence"]}
+  ],
+  "chunkers": ["fixed", "sentence", "heading"],
+  "sizes": [128, 256, 512],
+  "overlaps": [0, 0.2],
+  "retrievers": ["bm25", "dense", "hybrid"],
+  "models": ["minilm"],
+  "seed": 0,
+  "threads": 4,
+  "memory_limit_mb": 2048
+}

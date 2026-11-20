@@ -1,0 +1,182 @@
+[
+  {
+    "id": "F01",
+    "area": "init",
+    "description": "init.sh builds .venv, installs, lints and runs all tests offline",
+    "steps": [
+      "./init.sh"
+    ],
+    "passes": false
+  },
+  {
+    "id": "F02",
+    "area": "corpus",
+    "description": "Loaders for the tiny, self-made and SciFact corpora; heading queries for self-made",
+    "steps": [
+      ".venv/bin/python -m pytest tests/test_corpus.py"
+    ],
+    "passes": false
+  },
+  {
+    "id": "F03",
+    "area": "embed",
+    "description": "Fake hash embedder for tests, no download",
+    "steps": [
+      ".venv/bin/python -m pytest tests/test_retrieve.py -k hash"
+    ],
+    "passes": false
+  },
+  {
+    "id": "F04",
+    "area": "chunk",
+    "description": "Fixed, sentence and heading chunkers sized in words",
+    "steps": [
+      ".venv/bin/python -m pytest tests/test_chunkers.py"
+    ],
+    "passes": false
+  },
+  {
+    "id": "F05",
+    "area": "retrieve",
+    "description": "BM25 written from scratch",
+    "steps": [
+      ".venv/bin/python -m pytest tests/test_bm25.py"
+    ],
+    "passes": false
+  },
+  {
+    "id": "F06",
+    "area": "metrics",
+    "description": "Recall@k, MRR, nDCG@10 with bootstrap intervals over queries",
+    "steps": [
+      ".venv/bin/python -m pytest tests/test_metrics.py"
+    ],
+    "passes": false
+  },
+  {
+    "id": "F07",
+    "area": "grid",
+    "description": "Resumable grid runner with pending/running/done/failed states, memory guard and timing",
+    "steps": [
+      ".venv/bin/python -m pytest tests/test_grid.py tests/test_memguard.py"
+    ],
+    "passes": false
+  },
+  {
+    "id": "F08",
+    "area": "retrieve",
+    "description": "Dense search with FastEmbed (all-MiniLM-L6-v2 ONNX) and hybrid search with RRF",
+    "steps": [
+      ".venv/bin/python scripts/fetch_data.py models",
+      ".venv/bin/python -m pytest tests/test_retrieve.py",
+      "grep -c '\"retriever\": \"hybrid\"' results/results.jsonl"
+    ],
+    "passes": false
+  },
+  {
+    "id": "F09",
+    "area": "rerank",
+    "description": "Optional cross-encoder reranker if an ONNX one is reachable",
+    "steps": [
+      "cat BLOCKERS.md | grep -i reranker"
+    ],
+    "passes": false
+  },
+  {
+    "id": "F10",
+    "area": "done-1",
+    "description": "Tiny grid runs in under 2 minutes on 2 cores; unit tests use the hash embedder",
+    "steps": [
+      "time taskset -c 0,1 .venv/bin/cpu-rag-lab run --config configs/tiny.json --results /tmp/tiny-check.jsonl"
+    ],
+    "passes": false
+  },
+  {
+    "id": "F11",
+    "area": "done-2",
+    "description": "Default grid finishes in about 20 minutes with peak memory under 2 GB, recorded per run",
+    "steps": [
+      ".venv/bin/cpu-rag-lab status --config configs/default.json",
+      "cat results/default_grid_timing.json"
+    ],
+    "passes": false
+  },
+  {
+    "id": "F12",
+    "area": "done-3",
+    "description": "README table lists top configurations with Recall@10, MRR, nDCG@10, 95% intervals, latency and RAM",
+    "steps": [
+      ".venv/bin/python -m pytest tests/test_report.py -k readme"
+    ],
+    "passes": false
+  },
+  {
+    "id": "F13",
+    "area": "done-4",
+    "description": "A test checks every number in the decision guide against results.jsonl",
+    "steps": [
+      ".venv/bin/python -m pytest tests/test_report.py -k guide"
+    ],
+    "passes": false
+  },
+  {
+    "id": "F14",
+    "area": "done-5",
+    "description": "The static site builds locally and opens from disk with no server",
+    "steps": [
+      ".venv/bin/cpu-rag-lab report --check",
+      ".venv/bin/python -m pytest tests/test_report.py -k site"
+    ],
+    "passes": false
+  },
+  {
+    "id": "F15",
+    "area": "done-6",
+    "description": "README lists each model with size, license and pinned revision",
+    "steps": [
+      ".venv/bin/python -m pytest tests/test_report.py -k models"
+    ],
+    "passes": false
+  },
+  {
+    "id": "F16",
+    "area": "done-7",
+    "description": "Quality bar: README parts, CI and badge, LICENSE, CHANGELOG, templates, CONTRIBUTING, topics, social preview, demo, link checker",
+    "steps": [
+      ".venv/bin/python scripts/check_links.py",
+      "actionlint .github/workflows/*.yml",
+      "test -f docs/social-preview.png"
+    ],
+    "passes": false
+  },
+  {
+    "id": "F17",
+    "area": "done-7",
+    "description": "Study-later kit: WALKTHROUGH, INTERVIEW_QA, DECISIONS",
+    "steps": [
+      "test -f docs/WALKTHROUGH.md && test -f docs/INTERVIEW_QA.md && test -f DECISIONS.md"
+    ],
+    "passes": false
+  },
+  {
+    "id": "F18",
+    "area": "done-7",
+    "description": "Release check: review, gitleaks, pip-audit, ruff S, actionlint, links, humanize, outside check",
+    "steps": [
+      "gitleaks git -v .",
+      "ruff check --select S src",
+      "cat docs/RELEASE_CHECK.md"
+    ],
+    "passes": false
+  },
+  {
+    "id": "F19",
+    "area": "done-7",
+    "description": "Hand-off: CHANGELOG rc1 entry with SHA, HUMAN_STEPS, COWORK_PROMPT, GitHub about and topics files",
+    "steps": [
+      "grep v0.1.0-rc1 CHANGELOG.md",
+      "test -f docs/HUMAN_STEPS.md && test -f docs/handoff/COWORK_PROMPT.md && test -f docs/topics.txt"
+    ],
+    "passes": false
+  }
+]

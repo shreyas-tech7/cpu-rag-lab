@@ -7,6 +7,7 @@ records it. The tests regenerate the files and check every number against result
 from __future__ import annotations
 
 import json
+import math
 import re
 import statistics
 from html import escape
@@ -105,7 +106,8 @@ def run_facts(rows: list[dict]) -> dict:
         "runs": len(rows),
         "done": len(done),
         "failed": sum(r["status"] == FAILED for r in rows),
-        "wall_s": sum(r.get("wall_s", 0) for r in rows),
+        # fsum gives the same answer on every Python version (sum() changed in 3.12).
+        "wall_s": round(math.fsum(r.get("wall_s", 0) for r in rows), 3),
         "peak_rss_mb": max((r["peak_rss_mb"] for r in done), default=0),
         "memory_limit_mb": max((r["memory_limit_mb"] for r in rows), default=0),
         "grids": sorted({r["grid"] for r in rows}),

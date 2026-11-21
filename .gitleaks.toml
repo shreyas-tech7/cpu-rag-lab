@@ -1,0 +1,8 @@
+# Extend the default rules. One allowlisted file: the FastAPI JWT tutorial holds a public
+# example token from the FastAPI docs (jwt.io sample). It is not a secret.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Public sample JWT in the FastAPI docs tutorial"
+paths = ['''data/selfmade/raw/fastapi/en/docs/tutorial/security/oauth2-jwt\.md''']

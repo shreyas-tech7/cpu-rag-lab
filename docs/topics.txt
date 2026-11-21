@@ -1,0 +1,12 @@
+rag
+retrieval
+information-retrieval
+bm25
+embeddings
+fastembed
+onnx
+cpu
+benchmark
+chunking
+hybrid-search
+python

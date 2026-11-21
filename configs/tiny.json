@@ -1,0 +1,12 @@
+{
+  "name": "tiny",
+  "corpora": ["tiny"],
+  "chunkers": ["fixed", "sentence", "heading"],
+  "sizes": [32, 64],
+  "overlaps": [0, 0.2],
+  "retrievers": ["bm25", "dense", "hybrid"],
+  "models": ["hash"],
+  "seed": 0,
+  "threads": 2,
+  "memory_limit_mb": 2048
+}

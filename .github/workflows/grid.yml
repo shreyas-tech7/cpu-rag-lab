@@ -1,0 +1,30 @@
+name: Default grid (manual)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  grid:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: astral-sh/setup-uv@v6
+      - run: ./init.sh
+      - run: uv pip install --python .venv/bin/python -e ".[dense]"
+      - run: .venv/bin/python scripts/fetch_data.py scifact models
+      - run: .venv/bin/cpu-rag-lab run --config configs/default.json --results results/ci-grid.jsonl
+      - run: .venv/bin/cpu-rag-lab report --results results/ci-grid.jsonl
+      - uses: actions/upload-artifact@v4
+        with:
+          name: grid-results
+          path: |
+            results/ci-grid.jsonl
+            docs/DECISION_GUIDE.md
+            docs/index.html

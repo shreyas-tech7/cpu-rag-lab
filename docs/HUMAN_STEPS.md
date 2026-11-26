@@ -4,8 +4,6 @@ Steps that only Shreyas can do, in order. The release commit is:
 
 `b98c4e89ba0ebf4cfbfcbbcaa5cdd248d06df3ac`
 
-The repo stays private until step 5.
-
 ## 1. Create `main` and open the pull request
 
 The GitHub repo was empty when the build started, and the build machine was not allowed to push `main`. The branch `claude/build-cpu-rag-lab` starts at commit `5ad5fba1f3f613ac1ea7175f59b63db1853dd74d`.
@@ -48,7 +46,7 @@ The only allowlisted path is a public sample JWT in the FastAPI docs (`.gitleaks
 
 ## 5. Make the repo public
 
-Settings > General > Danger Zone > Change visibility. All history becomes public at that moment.
+Done 2026-11-26: the repo is public.
 
 ## 6. Turn on Pages
 
@@ -88,4 +86,4 @@ The answer-quality probe needs a free provider key and an allowed host. Add the 
 
 ## 12. Decide whether `docs/build/BUILD_PROMPT.md` stays public
 
-It is the full brief the agents worked from. Keep it for transparency or remove it before step 5.
+It is the full brief the agents worked from. Keep it for transparency or remove it.

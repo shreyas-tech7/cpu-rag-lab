@@ -173,10 +173,10 @@
   {
     "id": "F19",
     "area": "done-7",
-    "description": "Hand-off: CHANGELOG rc1 entry with SHA, HUMAN_STEPS, COWORK_PROMPT, GitHub about and topics files",
+    "description": "Hand-off: CHANGELOG rc1 entry with SHA, HUMAN_STEPS, GitHub about and topics files. The agent hand-off prompt was removed before the public release.",
     "steps": [
       "grep v0.1.0-rc1 CHANGELOG.md",
-      "test -f docs/HUMAN_STEPS.md && test -f docs/handoff/COWORK_PROMPT.md && test -f docs/topics.txt"
+      "test -f docs/HUMAN_STEPS.md && test -f docs/topics.txt"
     ],
     "passes": true
   }

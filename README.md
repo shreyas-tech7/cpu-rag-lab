@@ -46,6 +46,8 @@ Scores are means over queries. Brackets hold 95% percentile bootstrap intervals 
 | 4 | hybrid (minilm) | heading | 128 | 20% | 0.836 [0.805, 0.864] | 0.542 [0.507, 0.574] | 0.613 [0.581, 0.643] | 2.08 | 2.62 | 1,339 | 32.89 |
 | 5 | hybrid (minilm) | heading | 256 | 20% | 0.843 [0.812, 0.871] | 0.539 [0.505, 0.572] | 0.613 [0.581, 0.641] | 2.48 | 3.55 | 1,340 | 47.23 |
 
+The intervals of these five rows overlap, so treat them as a tie.
+
 **SciFact, 1,000-abstract pool**, top 5 of 36 runs by nDCG@10:
 
 | # | Retriever | Chunker | Size (words) | Overlap | Recall@10 [95% CI] | MRR@10 [95% CI] | nDCG@10 [95% CI] | p50 ms | p95 ms | Peak RAM MB | Build s |
@@ -55,6 +57,8 @@ Scores are means over queries. Brackets hold 95% percentile bootstrap intervals 
 | 3 | hybrid (minilm) | fixed | 512 | 0% | 0.908 [0.874, 0.940] | 0.799 [0.758, 0.839] | 0.820 [0.782, 0.856] | 3.23 | 4.89 | 1,416 | 58.63 |
 | 4 | hybrid (minilm) | fixed | 512 | 20% | 0.908 [0.874, 0.940] | 0.799 [0.757, 0.838] | 0.820 [0.782, 0.856] | 3.82 | 5.26 | 1,416 | 58.43 |
 | 5 | hybrid (minilm) | fixed | 256 | 20% | 0.898 [0.863, 0.930] | 0.803 [0.760, 0.844] | 0.820 [0.781, 0.857] | 14.84 | 23.91 | 1,415 | 73.65 |
+
+The intervals of these five rows overlap, so treat them as a tie.
 <!-- END:results -->
 
 ### Models

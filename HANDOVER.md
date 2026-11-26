@@ -5,7 +5,6 @@ The build is finished as a release candidate on branch `claude/build-cpu-rag-lab
 
 ## Next
 1. Follow `docs/HUMAN_STEPS.md`: create `main` from `5ad5fba`, open the pull request, merge with a merge commit, tag `v0.1.0-rc1` on the release SHA in `CHANGELOG.md`.
-2. Optional: `docs/handoff/COWORK_PROMPT.md` covers the free browser steps.
 
 ## Open decisions
 - Keep `docs/build/BUILD_PROMPT.md` public or not.

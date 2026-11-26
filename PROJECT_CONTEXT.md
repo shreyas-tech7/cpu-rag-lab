@@ -27,7 +27,7 @@ Python 3.11+, numpy, FastEmbed (ONNX on CPU, no PyTorch), pytest, ruff. Charts a
 - `configs/`: grid configs. `models.json`: pinned models.
 - `data/selfmade/`: committed docs, licenses and manifest. `data/scifact/`: downloaded, not committed.
 - `results/`: `results.jsonl` (default grid), `tiny.jsonl`.
-- `docs/`: site, guide, study kit, build prompt, hand-off.
+- `docs/`: site, guide, study kit, build prompt, human steps.
 - `scripts/`: fetch data, link check, social preview, secret scan.
 
 ## Rules

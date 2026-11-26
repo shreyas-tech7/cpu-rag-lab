@@ -4,7 +4,7 @@
 - Library, CLI, tests (48, offline), CI (green on Python 3.11), generated README, decision guide and site.
 - Default grid: 90 of 90 runs, 0 failed, 24.5 minutes of run time on a 4-core VM, peak 1,416 MB (`results/summary.json`). Tiny grid: 36 runs in under a second on 2 cores.
 - Code review fixes with tests, then a full rerun of the grid.
-- Study-later kit, DEMO, CHANGELOG, HUMAN_STEPS, COWORK_PROMPT, PROPOSALS, RELEASE_CHECK.
+- Study-later kit, DEMO, CHANGELOG, HUMAN_STEPS, PROPOSALS, RELEASE_CHECK.
 - Release check and outside check done. See `docs/RELEASE_CHECK.md`.
 - Release commit b98c4e89ba0ebf4cfbfcbbcaa5cdd248d06df3ac. Its SHA is written into CHANGELOG.md and docs/HUMAN_STEPS.md by the follow-up commit.
 

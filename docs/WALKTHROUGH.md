@@ -81,9 +81,8 @@ Then a script turns those lines into tables, a guide and a web page.
 - `DECISION_GUIDE.md`: the takeaways, written by the report script.
 - `DEMO.md`: a real terminal session.
 - `INTERVIEW_QA.md`: questions a founder might ask, with answers tied to code and results.
-- `PLAN.md`, `ENVIRONMENT.md`, `TOOLING.md`, `RELEASE_CHECK.md`: how the build went.
+- `PLAN.md`, `ENVIRONMENT.md`, `RELEASE_CHECK.md`: how the build went.
 - `HUMAN_STEPS.md`: the steps only Shreyas can do.
-- `handoff/COWORK_PROMPT.md`: a prompt for the browser steps.
 - `build/BUILD_PROMPT.md`: the full brief the agents worked from.
 - `topics.txt`, `GITHUB_ABOUT.md`, `social-preview.png`: GitHub page settings.
 

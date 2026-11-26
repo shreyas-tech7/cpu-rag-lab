@@ -3,7 +3,7 @@
 One line per choice: the options weighed and the reason.
 
 - Name: `cpu-rag-lab`. Checked 2026-11-20: `pypi.org/pypi/cpu-rag-lab/json` 404, `registry.npmjs.org/cpu-rag-lab` 404, no well-known GitHub project with that name. It matches the repo, so no rename.
-- Base branch: GitHub origin was empty when cloned, so the branch `claude/build-cpu-rag-lab` starts from the backup remote's `main` (one README commit by Shreyas). Options: start from an empty root, or from that commit. That commit keeps one shared history.
+- Base branch: GitHub origin was empty when cloned, so the branch `claude/build-cpu-rag-lab` starts from the `main` in the build session's clone (one README commit by Shreyas). Options: start from an empty root, or from that commit. That commit keeps one shared history.
 - Embedding model: `sentence-transformers/all-MiniLM-L6-v2` (Apache-2.0) from Chroma's public S3 export, loaded by FastEmbed from a local folder. Options: the brief's default `BAAI/bge-small-en-v1.5`, npm republishes of model files, or BM25 plus the hash embedder only. Hugging Face answered 403 and the old FastEmbed GCS mirror answered AccessDenied, so bge-small could not be fetched. The Chroma archive has its SHA-256 pinned in Chroma's own source code, which gives a checkable origin. Obscure npm republishes have no checkable origin, so they were not used.
 - Only one real embedding model, not two or three. Every other FastEmbed model downloads only from Hugging Face. Logged in BLOCKERS.md.
 - Reranker: off. Every FastEmbed cross-encoder lives on Hugging Face. The MVP lists it as optional.

@@ -99,6 +99,20 @@ def top_table(rows: list[dict], corpus: str, facts: Facts, n: int = 5) -> str:
     return head + "\n".join(lines)
 
 
+def tie_note(top: list[dict], metric: str = "ndcg@10") -> str:
+    """A sentence for under a top table, only when every row's interval overlaps the best row's."""
+    if len(top) < 2:
+        return ""
+    best = top[0]["metrics"][metric]
+    if all(
+        r["metrics"][metric]["lo"] <= best["hi"] and r["metrics"][metric]["hi"] >= best["lo"]
+        for r in top
+    ):
+        rows = "these five rows" if len(top) == 5 else "these rows"
+        return f"The intervals of {rows} overlap, so treat them as a tie."
+    return ""
+
+
 def run_facts(rows: list[dict]) -> dict:
     """Totals for the whole grid."""
     done = done_rows(rows)
@@ -454,6 +468,9 @@ def readme_blocks(rows: list[dict], facts: Facts) -> dict[str, str]:
             f"**{CORPUS_NAMES.get(c, c)}**, top 5 of {facts.i(len(ranked(done, c)))} runs by nDCG@10:\n"
         )
         tops.append(top_table(done, c, facts))
+        note = tie_note(ranked(done, c)[:5])
+        if note:
+            tops += ["", note]
         tops.append("")
     blocks["results"] = "\n".join(tops).rstrip()
     return blocks
